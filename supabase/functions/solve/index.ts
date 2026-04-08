@@ -1,11 +1,13 @@
 // Supabase Edge Function: solve
+//
 // Receives a base64 image from the client and asks Claude to solve the problem.
 // Returns: { steps: string[], final_answer: string }
 //
-// Deploy: supabase functions deploy solve
+// Deploy:  supabase functions deploy solve
 // Secrets: supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 
 import Anthropic from 'npm:@anthropic-ai/sdk';
+import { corsHeaders } from '../_shared/cors.ts';
 
 const anthropic = new Anthropic({
   apiKey: Deno.env.get('ANTHROPIC_API_KEY') ?? '',
@@ -30,8 +32,13 @@ Rules:
 type SolveResponse = { steps: string[]; final_answer: string };
 
 Deno.serve(async (req) => {
+  // CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return json({ error: 'Method not allowed' }, 405);
   }
 
   try {
@@ -88,6 +95,6 @@ function stripFences(s: string): string {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: { ...corsHeaders, 'content-type': 'application/json' },
   });
 }
