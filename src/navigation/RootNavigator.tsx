@@ -7,8 +7,8 @@ import PaywallScreen from '../screens/PaywallScreen';
 
 export type RootStackParamList = {
   Scan: undefined;
-  ModeSelect: undefined;
-  Result: undefined;
+  ModeSelect: { imageUri: string; width: number; height: number };
+  Result: { imageUri: string; mode: string };
   Paywall: undefined;
 };
 
