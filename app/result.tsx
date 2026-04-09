@@ -19,11 +19,14 @@ import { captureRef } from "react-native-view-shot";
 import { supabase } from "@/lib/supabase";
 import { isPro } from "@/lib/revenuecat";
 import { useAuthStore } from "@/store/authStore";
+import { SolverResult } from "@/components/Result/SolverResult";
+import { SummaryResult } from "@/components/Result/SummaryResult";
 
 type Params = {
   mode?: "export" | "solve" | "summarize";
   imageUri?: string;
   text?: string;
+  fromHistory?: string;
 };
 
 export default function ResultScreen() {
@@ -162,12 +165,18 @@ export default function ResultScreen() {
     }
   };
 
-  if (mode !== "export") {
+  if (mode === "solve") {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white">
-        <Text className="text-lg text-gray-700">
-          Result screen for &quot;{mode}&quot; mode not implemented yet.
-        </Text>
+      <SafeAreaView className="flex-1 bg-white">
+        <SolverResult text={text ?? ""} imageUri={imageUri} />
+      </SafeAreaView>
+    );
+  }
+
+  if (mode === "summarize") {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <SummaryResult text={text ?? ""} imageUri={imageUri} />
       </SafeAreaView>
     );
   }
