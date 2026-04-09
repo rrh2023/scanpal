@@ -12,6 +12,15 @@ export const PRO_ENTITLEMENT = "pro";
 export function configureRevenueCat(appUserId?: string): void {
   const apiKey =
     Platform.OS === "ios" ? CONFIG.REVENUECAT_IOS_KEY : CONFIG.REVENUECAT_ANDROID_KEY;
+
+  if (!apiKey) {
+    console.warn(
+      `RevenueCat API key missing for ${Platform.OS}. ` +
+        "Set EXPO_PUBLIC_REVENUECAT_IOS_KEY or EXPO_PUBLIC_REVENUECAT_ANDROID_KEY."
+    );
+    return;
+  }
+
   Purchases.configure({ apiKey, appUserID: appUserId });
 }
 
