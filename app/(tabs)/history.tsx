@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   RefreshControl,
+  StyleSheet,
 } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,7 +16,6 @@ import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/store/authStore";
 
 type ScanMode = "export" | "solve" | "summarize";
-
 type ScanRow = {
   id: string;
   mode: ScanMode;
@@ -26,20 +26,15 @@ type ScanRow = {
 };
 
 const MODE_META: Record<ScanMode, { label: string; icon: keyof typeof Ionicons.glyphMap; bg: string; fg: string }> = {
-  export: { label: "Export", icon: "document-outline", bg: "bg-gray-100", fg: "text-gray-700" },
-  solve: { label: "Solver", icon: "bulb-outline", bg: "bg-teal-100", fg: "text-teal-700" },
-  summarize: { label: "Summarizer", icon: "sparkles-outline", bg: "bg-purple-100", fg: "text-purple-700" },
+  export: { label: "Export", icon: "document-outline", bg: "#f3f4f6", fg: "#374151" },
+  solve: { label: "Solver", icon: "bulb-outline", bg: "#ccfbf1", fg: "#0f766e" },
+  summarize: { label: "Summarizer", icon: "sparkles-outline", bg: "#f3e8ff", fg: "#7e22ce" },
 };
 
 const FREE_HISTORY_LIMIT = 3;
 
 function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function HistoryScreen() {
@@ -54,11 +49,7 @@ export default function HistoryScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!user) {
-      setScans([]);
-      setLoading(false);
-      return;
-    }
+    if (!user) { setScans([]); setLoading(false); return; }
     setError(null);
     try {
       let query = supabase
@@ -66,9 +57,7 @@ export default function HistoryScreen() {
         .select("id, mode, input_text, result_text, image_path, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-
       if (!isPro) query = query.limit(FREE_HISTORY_LIMIT);
-
       const { data, error } = await query;
       if (error) throw error;
       setScans((data ?? []) as ScanRow[]);
@@ -80,143 +69,76 @@ export default function HistoryScreen() {
     }
   }, [user, isPro]);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load])
-  );
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useEffect(() => { load(); }, [load]);
 
   const openScan = (scan: ScanRow) => {
-    router.push({
-      pathname: "/result",
-      params: {
-        mode: scan.mode,
-        imageUri: scan.image_path ?? undefined,
-        text: scan.input_text ?? "",
-        fromHistory: "1",
-      },
-    });
+    router.push({ pathname: "/result", params: { mode: scan.mode, imageUri: scan.image_path ?? undefined, text: scan.input_text ?? "", fromHistory: "1" } });
   };
 
   const renderItem = ({ item }: { item: ScanRow }) => {
     const meta = MODE_META[item.mode];
     const preview = item.input_text?.trim() || item.result_text?.trim() || "";
     return (
-      <Pressable
-        onPress={() => openScan(item)}
-        className="mb-3 flex-row gap-3 rounded-2xl border border-gray-200 bg-white p-3 active:bg-gray-50"
-        style={{
-          shadowColor: "#000",
-          shadowOpacity: 0.04,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: 2 },
-          elevation: 1,
-        }}
-      >
-        <View className="h-20 w-20 overflow-hidden rounded-xl bg-gray-100">
+      <Pressable onPress={() => openScan(item)} style={s.card}>
+        <View style={s.thumb}>
           {item.image_path ? (
-            <Image
-              source={{ uri: item.image_path }}
-              className="h-full w-full"
-              resizeMode="cover"
-            />
+            <Image source={{ uri: item.image_path }} style={s.thumbImg} resizeMode="cover" />
           ) : (
-            <View className="h-full w-full items-center justify-center">
-              <Ionicons name="image-outline" size={24} color="#9ca3af" />
-            </View>
+            <View style={s.thumbEmpty}><Ionicons name="image-outline" size={24} color="#9ca3af" /></View>
           )}
         </View>
-
-        <View className="flex-1 justify-between py-0.5">
-          <View className="flex-row items-center gap-2">
-            <View className={`flex-row items-center gap-1 rounded-full ${meta.bg} px-2 py-1`}>
-              <Ionicons name={meta.icon} size={12} color="#374151" />
-              <Text className={`text-[11px] font-semibold ${meta.fg}`}>{meta.label}</Text>
+        <View style={s.cardBody}>
+          <View style={s.badgeRow}>
+            <View style={[s.badge, { backgroundColor: meta.bg }]}>
+              <Ionicons name={meta.icon} size={12} color={meta.fg} />
+              <Text style={[s.badgeText, { color: meta.fg }]}>{meta.label}</Text>
             </View>
-            <Text className="text-xs text-gray-500">{formatDate(item.created_at)}</Text>
+            <Text style={s.date}>{formatDate(item.created_at)}</Text>
           </View>
-
           {preview ? (
-            <Text className="mt-1 text-sm text-gray-700" numberOfLines={2}>
-              {preview}
-            </Text>
+            <Text style={s.preview} numberOfLines={2}>{preview}</Text>
           ) : (
-            <Text className="mt-1 text-sm italic text-gray-400">No text</Text>
+            <Text style={s.noText}>No text</Text>
           )}
         </View>
-
-        <View className="self-center">
-          <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-        </View>
+        <View style={s.chevron}><Ionicons name="chevron-forward" size={20} color="#9ca3af" /></View>
       </Pressable>
     );
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
-      <View className="px-5 pb-2 pt-4">
-        <Text className="text-3xl font-bold text-gray-900">History</Text>
-      </View>
+    <SafeAreaView style={s.container} edges={["top"]}>
+      <View style={s.titleRow}><Text style={s.title}>History</Text></View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator />
-        </View>
+        <View style={s.center}><ActivityIndicator /></View>
       ) : error ? (
-        <View className="flex-1 items-center justify-center px-8">
+        <View style={s.center}>
           <Ionicons name="alert-circle-outline" size={48} color="#dc2626" />
-          <Text className="mt-3 text-center text-base text-gray-800">{error}</Text>
-          <Pressable
-            onPress={load}
-            className="mt-5 rounded-full bg-gray-900 px-6 py-3 active:opacity-80"
-          >
-            <Text className="font-semibold text-white">Retry</Text>
-          </Pressable>
+          <Text style={s.errorText}>{error}</Text>
+          <Pressable onPress={load} style={s.retryBtn}><Text style={s.retryText}>Retry</Text></Pressable>
         </View>
       ) : scans.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8">
+        <View style={s.center}>
           <Ionicons name="time-outline" size={56} color="#9ca3af" />
-          <Text className="mt-3 text-lg font-semibold text-gray-800">No scans yet</Text>
-          <Text className="mt-1 text-center text-sm text-gray-500">
-            Your scanned documents will appear here.
-          </Text>
+          <Text style={s.emptyTitle}>No scans yet</Text>
+          <Text style={s.emptySubtitle}>Your scanned documents will appear here.</Text>
         </View>
       ) : (
         <FlatList
           data={scans}
           keyExtractor={(s) => s.id}
           renderItem={renderItem}
-          contentContainerStyle={{ padding: 20, paddingTop: 8, paddingBottom: 40 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => {
-                setRefreshing(true);
-                load();
-              }}
-            />
-          }
+          contentContainerStyle={s.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
           ListFooterComponent={
             !isPro ? (
-              <Pressable
-                onPress={() => router.push("/paywall")}
-                className="mt-2 flex-row items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 active:opacity-80"
-              >
-                <View className="h-10 w-10 items-center justify-center rounded-full bg-amber-200">
-                  <Ionicons name="lock-closed" size={18} color="#92400e" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-sm font-bold text-amber-900">
-                    See your full history
-                  </Text>
-                  <Text className="mt-0.5 text-xs text-amber-800">
-                    Free tier shows only your last {FREE_HISTORY_LIMIT} scans. Upgrade to
-                    Pro for unlimited history.
-                  </Text>
+              <Pressable onPress={() => router.push("/paywall")} style={s.upgradeCard}>
+                <View style={s.upgradeBadge}><Ionicons name="lock-closed" size={18} color="#92400e" /></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.upgradeTitle}>See your full history</Text>
+                  <Text style={s.upgradeSub}>Free tier shows only your last {FREE_HISTORY_LIMIT} scans. Upgrade to Pro for unlimited history.</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color="#92400e" />
               </Pressable>
@@ -227,3 +149,39 @@ export default function HistoryScreen() {
     </SafeAreaView>
   );
 }
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  titleRow: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  title: { fontSize: 28, fontWeight: "700", color: "#111827" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
+  list: { padding: 20, paddingTop: 8, paddingBottom: 40 },
+  card: {
+    flexDirection: "row", gap: 12, borderRadius: 16, borderWidth: 1, borderColor: "#e5e7eb",
+    backgroundColor: "#fff", padding: 12, marginBottom: 12,
+    shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 1,
+  },
+  thumb: { width: 80, height: 80, borderRadius: 12, overflow: "hidden", backgroundColor: "#f3f4f6" },
+  thumbImg: { width: "100%", height: "100%" },
+  thumbEmpty: { flex: 1, alignItems: "center", justifyContent: "center" },
+  cardBody: { flex: 1, justifyContent: "space-between", paddingVertical: 2 },
+  badgeRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  badge: { flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
+  badgeText: { fontSize: 11, fontWeight: "600" },
+  date: { fontSize: 12, color: "#6b7280" },
+  preview: { marginTop: 4, fontSize: 14, color: "#374151" },
+  noText: { marginTop: 4, fontSize: 14, fontStyle: "italic", color: "#9ca3af" },
+  chevron: { alignSelf: "center" },
+  errorText: { marginTop: 12, textAlign: "center", fontSize: 16, color: "#111827" },
+  retryBtn: { marginTop: 20, borderRadius: 24, backgroundColor: "#111827", paddingHorizontal: 24, paddingVertical: 12 },
+  retryText: { fontWeight: "600", color: "#fff" },
+  emptyTitle: { marginTop: 12, fontSize: 18, fontWeight: "600", color: "#111827" },
+  emptySubtitle: { marginTop: 4, textAlign: "center", fontSize: 14, color: "#6b7280" },
+  upgradeCard: {
+    marginTop: 8, flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 16,
+    borderWidth: 1, borderColor: "#fcd34d", backgroundColor: "#fffbeb", padding: 16,
+  },
+  upgradeBadge: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#fde68a", alignItems: "center", justifyContent: "center" },
+  upgradeTitle: { fontSize: 14, fontWeight: "700", color: "#78350f" },
+  upgradeSub: { marginTop: 2, fontSize: 12, color: "#92400e" },
+});

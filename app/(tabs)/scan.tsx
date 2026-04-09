@@ -5,6 +5,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  StyleSheet,
 } from "react-native";
 import { CameraView, useCameraPermissions, type CameraCapturedPicture } from "expo-camera";
 import { useRouter } from "expo-router";
@@ -20,7 +21,7 @@ export default function ScanScreen() {
 
   if (!permission) {
     return (
-      <View className="flex-1 items-center justify-center bg-black">
+      <View style={s.centerDark}>
         <ActivityIndicator color="#fff" />
       </View>
     );
@@ -28,15 +29,10 @@ export default function ScanScreen() {
 
   if (!permission.granted) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-black px-8">
-        <Text className="mb-4 text-center text-lg text-white">
-          ScanPal needs camera access to scan documents.
-        </Text>
-        <Pressable
-          onPress={requestPermission}
-          className="rounded-full bg-white px-6 py-3"
-        >
-          <Text className="font-semibold text-black">Grant permission</Text>
+      <SafeAreaView style={s.centerDark}>
+        <Text style={s.permText}>ScanPal needs camera access to scan documents.</Text>
+        <Pressable onPress={requestPermission} style={s.permBtn}>
+          <Text style={s.permBtnText}>Grant permission</Text>
         </Pressable>
       </SafeAreaView>
     );
@@ -54,7 +50,6 @@ export default function ScanScreen() {
       try {
         text = await recognizeText(photo.uri);
       } catch (e) {
-        // OCR module may not be available in Expo Go — continue without text
         console.warn("OCR failed:", e);
       }
 
@@ -70,34 +65,29 @@ export default function ScanScreen() {
   };
 
   return (
-    <View className="flex-1 bg-black">
-      <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back">
-        <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
-          {/* Header */}
-          <View className="px-6 pt-4">
-            <Text className="text-center text-base font-medium text-white/90">
-              Align the document inside the frame
-            </Text>
+    <View style={s.flex}>
+      <CameraView ref={cameraRef} style={s.flex} facing="back">
+        <SafeAreaView style={s.flex} edges={["top", "bottom"]}>
+          <View style={s.headerBar}>
+            <Text style={s.headerText}>Align the document inside the frame</Text>
           </View>
 
-          {/* Viewfinder */}
-          <View className="flex-1 items-center justify-center">
+          <View style={s.viewfinder}>
             <CornerBrackets size={290} />
           </View>
 
-          {/* Capture button */}
-          <View className="items-center pb-10">
+          <View style={s.captureRow}>
             <Pressable
               onPress={handleCapture}
               disabled={busy}
-              className="h-20 w-20 items-center justify-center rounded-full border-4 border-white/80 bg-white/10 active:opacity-70"
+              style={s.captureOuter}
               accessibilityRole="button"
               accessibilityLabel="Capture"
             >
               {busy ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <View className="h-14 w-14 rounded-full bg-white" />
+                <View style={s.captureInner} />
               )}
             </Pressable>
           </View>
@@ -106,3 +96,22 @@ export default function ScanScreen() {
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  flex: { flex: 1 },
+  centerDark: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#000", paddingHorizontal: 32 },
+  permText: { marginBottom: 16, textAlign: "center", fontSize: 16, color: "#fff" },
+  permBtn: { borderRadius: 24, backgroundColor: "#fff", paddingHorizontal: 24, paddingVertical: 12 },
+  permBtnText: { fontWeight: "600", color: "#000" },
+  headerBar: { paddingHorizontal: 24, paddingTop: 16 },
+  headerText: { textAlign: "center", fontSize: 15, fontWeight: "500", color: "rgba(255,255,255,0.9)" },
+  viewfinder: { flex: 1, alignItems: "center", justifyContent: "center" },
+  captureRow: { alignItems: "center", paddingBottom: 40 },
+  captureOuter: {
+    width: 80, height: 80, borderRadius: 40,
+    borderWidth: 4, borderColor: "rgba(255,255,255,0.8)",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center", justifyContent: "center",
+  },
+  captureInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#fff" },
+});
