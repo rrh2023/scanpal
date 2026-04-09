@@ -12,3 +12,17 @@
 - Free tier: 10 scans/month, watermarked exports
 - Pro tier: unlimited scans, no watermark, solver, summarizer
 - Never make Anthropic API calls from the client — route through Supabase Edge Functions
+
+
+## Folder structure
+app/
+├── (auth)/login.tsx, signup.tsx
+├── (tabs)/scan.tsx, history.tsx, settings.tsx
+├── mode-select.tsx
+├── result.tsx
+└── paywall.tsx
+components/Scanner/, Result/, UI/
+lib/supabase.ts, revenuecat.ts, anthropic.ts, ocr.ts
+store/authStore.ts, scanStore.ts
+supabase/functions/solve/, functions/summarize/, migrations/
+constants/config.ts
