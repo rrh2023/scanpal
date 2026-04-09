@@ -30,7 +30,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -41,9 +45,15 @@
         }
       ]
     ],
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
-      "eas": { "projectId": "REPLACE_WITH_EAS_PROJECT_ID" }
-    }
+      "router": {},
+      "eas": {
+        "projectId": "992d7865-05a8-4e13-82e7-8835c7e9421d"
+      }
+    },
+    "owner": "robherndon2023"
   }
 }

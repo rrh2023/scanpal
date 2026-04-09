@@ -53,7 +53,7 @@ create trigger on_auth_user_created
 create table if not exists public.scans (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  mode text not null check (mode in ('solve', 'summarize', 'ocr')),
+  mode text not null check (mode in ('export', 'solve', 'summarize', 'ocr')),
   input_text text,
   result_text text,
   image_path text,
