@@ -1,4 +1,8 @@
-// On-device OCR via Google ML Kit. Wire up an ML Kit module in a dev build.
-export async function recognizeText(_imageUri: string): Promise<string> {
-  throw new Error("OCR not implemented — wire up Google ML Kit in a dev build.");
+// On-device OCR via Google ML Kit.
+// Requires a dev build: `npx expo install @react-native-ml-kit/text-recognition`
+import TextRecognition from "@react-native-ml-kit/text-recognition";
+
+export async function recognizeText(imageUri: string): Promise<string> {
+  const result = await TextRecognition.recognize(imageUri);
+  return result?.text ?? "";
 }

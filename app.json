@@ -9,7 +9,13 @@
     "newArchEnabled": true,
     "ios": { "supportsTablet": true, "bundleIdentifier": "com.scanpal.app" },
     "android": { "package": "com.scanpal.app" },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        { "cameraPermission": "Allow ScanPal to access your camera to scan documents." }
+      ]
+    ],
     "experiments": { "typedRoutes": true }
   }
 }

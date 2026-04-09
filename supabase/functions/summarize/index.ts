@@ -1,26 +1,36 @@
 // Supabase Edge Function: summarize
+// Verifies JWT → checks usage cap → calls Anthropic claude-haiku-4-5 → increments usage.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { corsHeaders, json } from "../_shared/cors.ts";
+import { callAnthropic } from "../_shared/anthropic.ts";
+import { authenticate, assertWithinLimit, incrementUsage } from "../_shared/usage.ts";
 
 Deno.serve(async (req) => {
-  const { text } = await req.json();
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": Deno.env.get("ANTHROPIC_API_KEY") ?? "",
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5",
-      max_tokens: 1024,
-      messages: [
-        { role: "user", content: `Summarize the following:\n\n${text}` },
-      ],
-    }),
-  });
-  const data = await res.json();
-  const result = data?.content?.[0]?.text ?? "";
-  return new Response(JSON.stringify({ result }), {
-    headers: { "content-type": "application/json" },
-  });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
+
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return json({ error: "missing ANTHROPIC_API_KEY" }, 500);
+
+  let text: string;
+  try {
+    const body = await req.json();
+    text = String(body?.text ?? "").trim();
+  } catch {
+    return json({ error: "invalid json" }, 400);
+  }
+  if (!text) return json({ error: "text is required" }, 400);
+
+  try {
+    const ctx = await authenticate(req);
+    await assertWithinLimit(ctx);
+
+    const result = await callAnthropic("summarize", text, apiKey);
+    const usage = await incrementUsage(ctx);
+
+    return json({ result, usage, tier: ctx.tier });
+  } catch (e) {
+    const status = (e as { status?: number }).status ?? 500;
+    return json({ error: (e as Error).message }, status);
+  }
 });
